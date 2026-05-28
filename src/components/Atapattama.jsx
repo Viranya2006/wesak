@@ -182,6 +182,7 @@ export default function Atapattama({
   scale = 1,
   variant = 0,
   isHub = false,
+  lightweight = false,
   glowColor = '#ff5500',
   paperColor = '#fff8e7',
   ...props
@@ -282,7 +283,7 @@ export default function Atapattama({
           ║  1. Central Cube Body                ║
           ╚══════════════════════════════════════╝ */}
       <mesh geometry={boxGeom} material={saviyaMaterial} />
-      <StructuralEdges geometry={boxGeom} />
+      {!lightweight && <StructuralEdges geometry={boxGeom} />}
 
       {/* ╔══════════════════════════════════════╗
           ║  2. Internal Bamboo Skeleton         ║
@@ -308,11 +309,13 @@ export default function Atapattama({
             position={f.pos}
             rotation={f.rot}
           />
-          <StructuralEdges
-            geometry={faceCapGeom}
-            position={f.pos}
-            rotation={f.rot}
-          />
+          {!lightweight && (
+            <StructuralEdges
+              geometry={faceCapGeom}
+              position={f.pos}
+              rotation={f.rot}
+            />
+          )}
         </group>
       ))}
 
@@ -327,11 +330,13 @@ export default function Atapattama({
             position={c.position}
             quaternion={c.quaternion}
           />
-          <StructuralEdges
-            geometry={cornerCapGeom}
-            position={c.position}
-            quaternion={c.quaternion}
-          />
+          {!lightweight && (
+            <StructuralEdges
+              geometry={cornerCapGeom}
+              position={c.position}
+              quaternion={c.quaternion}
+            />
+          )}
         </group>
       ))}
 
@@ -339,7 +344,7 @@ export default function Atapattama({
           ║  4. Hanging Fluid Kinetic Tails      ║
           ║     (Rali)                           ║
           ╚══════════════════════════════════════╝ */}
-      {TASSEL_POSITIONS.map((tp, i) => (
+      {!lightweight && TASSEL_POSITIONS.map((tp, i) => (
         <group key={`rali-${i}`} position={tp}>
           <mesh
             geometry={tasselGeom}

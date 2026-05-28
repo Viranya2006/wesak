@@ -73,6 +73,7 @@ export default function FloatingLanterns({ blessings }) {
               position={[0, 0, 0]}
               scale={lantern.scale * 0.5}
               variant={variant}
+              lightweight
               glowColor={palette.glowColor}
               paperColor={palette.paperColor}
             />

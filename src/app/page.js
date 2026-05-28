@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
 import * as THREE from 'three';
 import CanvasContainer from '../components/CanvasContainer';
+import VirtualJoystick from '../components/VirtualJoystick';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 import { captureBrandedCard } from '../lib/captureCard';
 
@@ -157,7 +158,7 @@ function LandingGate({ onUnlock }) {
           boxShadow: '0 0 40px rgba(245,158,11,0.35), 0 4px 20px rgba(0,0,0,0.5)',
         }}
       >
-        UNVEIL EXPERIENCE WITH SPATIAL AUDIO
+        ENTER EXPERIENTIAL VESAK KALAPAYA WITH AUDIO
       </button>
 
       <p className="mt-4 text-xs" style={{ color: 'rgba(255,248,231,0.35)' }}>
@@ -209,11 +210,39 @@ export default function Home() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [showFormFeedback, setShowFormFeedback] = useState(false);
 
-  // Camera mode tracking — manual when user has interacted with OrbitControls
-  const [cameraMode, setCameraMode] = useState('Auto');
+  // Camera mode tracking
+  const [cameraMode, setCameraMode] = useState('Explore');
   const controlsRef = useRef();
-  const userInteractedRef = useRef(false);
   const bgAudioRef = useRef(null);
+
+  // Joystick → PlayerController movement bridge
+  const movementRef = useRef({ x: 0, y: 0 });
+  const keysRef = useRef({ w: false, a: false, s: false, d: false });
+
+  // WASD keyboard support — maps keys to movementRef when joystick is idle
+  useEffect(() => {
+    if (!sceneUnlocked) return;
+    const update = () => {
+      const k = keysRef.current;
+      const kx = (k.d ? 1 : 0) - (k.a ? 1 : 0);
+      const ky = (k.w ? 1 : 0) - (k.s ? 1 : 0);
+      // Only override if no joystick input
+      if (movementRef.current.x === 0 && movementRef.current.y === 0) {
+        movementRef.current = { x: kx, y: ky };
+      }
+    };
+    const onDown = (e) => {
+      const key = e.key.toLowerCase();
+      if (key in keysRef.current) { keysRef.current[key] = true; update(); }
+    };
+    const onUp = (e) => {
+      const key = e.key.toLowerCase();
+      if (key in keysRef.current) { keysRef.current[key] = false; update(); }
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
+  }, [sceneUnlocked]);
 
   // ── Start background music when scene is unlocked ──
   useEffect(() => {
@@ -225,18 +254,7 @@ export default function Home() {
     );
   }, [sceneUnlocked]);
 
-  // ── Detect user camera interaction ──
-  useEffect(() => {
-    if (!sceneUnlocked) return;
-    const onPointerDown = () => {
-      if (!userInteractedRef.current) {
-        userInteractedRef.current = true;
-        setCameraMode('Manual');
-      }
-    };
-    window.addEventListener('pointerdown', onPointerDown);
-    return () => window.removeEventListener('pointerdown', onPointerDown);
-  }, [sceneUnlocked]);
+
 
   // ── Callbacks ──
   const handleCanvasReady = useCallback((state) => {
@@ -251,57 +269,18 @@ export default function Home() {
     setSceneUnlocked(true);
   }, []);
 
-  // ── GSAP Camera Transitions ──
-  const animateCamera = useCallback(
-    (targetPos, targetLookAt) => {
-      if (!canvasState || !controlsRef.current) return;
-      const { camera } = canvasState;
-      const controls = controlsRef.current;
-
-      controls.enabled = false;
-      setCameraMode('Auto');
-      userInteractedRef.current = false;
-
-      gsap.to(camera.position, {
-        x: targetPos.x,
-        y: targetPos.y,
-        z: targetPos.z,
-        duration: 1.8,
-        ease: 'power3.inOut',
-        onUpdate: () => camera.updateProjectionMatrix(),
-      });
-
-      gsap.to(controls.target, {
-        x: targetLookAt.x,
-        y: targetLookAt.y,
-        z: targetLookAt.z,
-        duration: 1.8,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          controls.enabled = true;
-          controls.update();
-        },
-      });
-    },
-    [canvasState],
-  );
+  // ── Hotspot click handler (no camera animation in open world) ──
 
   const handleHotspotClick = useCallback(
     (key) => {
-      if (!canvasState || !controlsRef.current) return;
-
-      // Toggle off → reset
+      // Toggle panel visibility (player walks to it in open world)
       if (activeHotspot === key) {
         setActiveHotspot(null);
-        animateCamera(DEFAULT_CAM, DEFAULT_LOOK);
         return;
       }
-
       setActiveHotspot(key);
-      const target = HOTSPOTS[key];
-      animateCamera(target.camPos, target.lookAt);
     },
-    [canvasState, activeHotspot, animateCamera],
+    [activeHotspot],
   );
 
   // ── Blessing submission ──
@@ -358,6 +337,7 @@ export default function Home() {
         onDiagnostics={handleDiagnostics}
         controlsRef={controlsRef}
         sceneUnlocked={sceneUnlocked}
+        movementRef={movementRef}
       />
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -371,9 +351,12 @@ export default function Home() {
               CEYLON X
             </h1>
             <span className="text-[10px] tracking-[0.3em] text-cx-cream/60 font-mono mt-1">
-              VESAK KALAPAYA v3.0
+              VESAK KALAPAYA — OPEN WORLD
             </span>
           </div>
+
+          {/* ── Virtual Joystick (bottom-left) ── */}
+          <VirtualJoystick onMove={(v) => { movementRef.current = v; }} />
 
           {/* ── Top-Right WebGL Diagnostics Panel ── */}
           <div className="absolute top-6 right-6 z-10 glass-panel p-4 rounded-xl font-mono text-xs text-green-400 w-64 pointer-events-auto">

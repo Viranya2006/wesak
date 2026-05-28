@@ -1,134 +1,11 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import Atapattama from './Atapattama';
-import SparkParticles from './SparkParticles';
-import FloatingLanterns from './FloatingLanterns';
-import BodhiLeaves from './BodhiLeaves';
+import SacredWorld from './SacredWorld';
 import PostEffects from './PostEffects';
-import { AudioProvider, PositionalLanternAudio } from './AudioController';
-
-// ---------------------------------------------------------------------------
-//  CONSTANTS
-// ---------------------------------------------------------------------------
-const LOOK_AT_TARGET = new THREE.Vector3(0, 0, -2.5);
-const FLIGHT_SPEED = 0.003;            // progress per frame (~60 fps → full loop ≈ 5.5 s)
-const IDLE_RESUME_MS = 7000;           // 7 seconds of no input before auto-flight resumes
-const EASE_BACK_RATE = 0.015;          // lerp rate when easing back onto the spline
-
-// ---------------------------------------------------------------------------
-//  AutoCamera — cinematic CatmullRomCurve3 flight with user-override logic
-// ---------------------------------------------------------------------------
-function AutoCamera({ controlsRef }) {
-  const { camera } = useThree();
-
-  // Flight spline — 8 control points forming a sweeping closed loop
-  const flightPath = React.useMemo(
-    () =>
-      new THREE.CatmullRomCurve3(
-        [
-          new THREE.Vector3(0, 3, 12),
-          new THREE.Vector3(8, 5, 6),
-          new THREE.Vector3(10, 2, -4),
-          new THREE.Vector3(4, 6, -10),
-          new THREE.Vector3(-4, 4, -8),
-          new THREE.Vector3(-10, 2, -2),
-          new THREE.Vector3(-6, 5, 6),
-          new THREE.Vector3(0, 3, 12),
-        ],
-        true, // closed curve
-      ),
-    [],
-  );
-
-  const progressRef = useRef(0);
-  const userControlRef = useRef(false);
-  const idleTimerRef = useRef(null);
-  const easingBackRef = useRef(false);
-
-  // ---- pointer / touch handlers — pause auto-flight on interaction ----------
-  const handlePointerDown = useCallback(() => {
-    userControlRef.current = true;
-    easingBackRef.current = false;
-
-    // Enable OrbitControls for manual interaction
-    if (controlsRef?.current) {
-      controlsRef.current.enabled = true;
-    }
-
-    // Clear any pending resume timer
-    if (idleTimerRef.current) {
-      clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = null;
-    }
-  }, [controlsRef]);
-
-  const handlePointerUp = useCallback(() => {
-    // Start the 7-second idle countdown to resume auto-flight
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-
-    idleTimerRef.current = setTimeout(() => {
-      easingBackRef.current = true;  // smooth transition back to spline
-    }, IDLE_RESUME_MS);
-  }, []);
-
-  // Attach pointer listeners to the canvas DOM element
-  useEffect(() => {
-    const domElement = document.querySelector('canvas');
-    if (!domElement) return;
-
-    domElement.addEventListener('pointerdown', handlePointerDown);
-    domElement.addEventListener('pointerup', handlePointerUp);
-
-    return () => {
-      domElement.removeEventListener('pointerdown', handlePointerDown);
-      domElement.removeEventListener('pointerup', handlePointerUp);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    };
-  }, [handlePointerDown, handlePointerUp]);
-
-  // ---- render loop ----------------------------------------------------------
-  useFrame(() => {
-    // --- Easing back onto the spline after idle timeout -----------------------
-    if (easingBackRef.current) {
-      // Snap progress to the closest point on the spline to avoid jumps
-      const splinePos = flightPath.getPointAt(progressRef.current % 1);
-      const currentPos = camera.position.clone();
-      const blended = currentPos.lerp(splinePos, EASE_BACK_RATE);
-      camera.position.copy(blended);
-      camera.lookAt(LOOK_AT_TARGET);
-
-      // Once close enough, hand control fully back to auto-flight
-      if (currentPos.distanceTo(splinePos) < 0.15) {
-        userControlRef.current = false;
-        easingBackRef.current = false;
-
-        // Disable OrbitControls during auto-flight
-        if (controlsRef?.current) {
-          controlsRef.current.enabled = false;
-        }
-      }
-      return;
-    }
-
-    // --- User has control — do nothing, OrbitControls handles it -------------
-    if (userControlRef.current) return;
-
-    // --- Automatic cinematic flight ------------------------------------------
-    progressRef.current = (progressRef.current + FLIGHT_SPEED) % 1;
-    const point = flightPath.getPointAt(progressRef.current);
-    camera.position.copy(point);
-    camera.lookAt(LOOK_AT_TARGET);
-
-    // Keep OrbitControls disabled while flying
-    if (controlsRef?.current) {
-      controlsRef.current.enabled = false;
-    }
-  });
-
-  return null;
-}
+import PlayerController from './PlayerController';
+import { AudioProvider } from './AudioController';
 
 // ---------------------------------------------------------------------------
 //  DiagnosticsTracker — samples FPS, draw calls, geometries, textures
@@ -161,7 +38,7 @@ function DiagnosticsTracker({ onDiagnostics }) {
 }
 
 // ---------------------------------------------------------------------------
-//  CanvasContainer — master R3F shell for the Vesak Kalapaya experience
+//  CanvasContainer — master R3F shell for the open-world Vesak experience
 // ---------------------------------------------------------------------------
 export default function CanvasContainer({
   blessings,
@@ -169,6 +46,7 @@ export default function CanvasContainer({
   onDiagnostics,
   controlsRef,
   sceneUnlocked,
+  movementRef,
 }) {
   // Always call useRef unconditionally (rules of hooks)
   const internalControlsRef = useRef(null);
@@ -189,7 +67,7 @@ export default function CanvasContainer({
     <div className="w-full h-full absolute inset-0 bg-black overflow-hidden z-0">
       <Canvas
         shadows
-        camera={{ position: [0, 3, 12], fov: 50 }}
+        camera={{ position: [0, 2, 15], fov: 50 }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         onCreated={(state) => {
           if (onReady) {
@@ -201,57 +79,43 @@ export default function CanvasContainer({
           }
         }}
       >
-        {/* Atmospheric warm fog */}
-        <fog attach="fog" args={['#050208', 15, 55]} />
+        {/* Atmospheric deep fog for open world */}
+        <fog attach="fog" args={['#030106', 8, 80]} />
 
         {/* Spatial Web Audio Context */}
         <AudioProvider>
           {/* ---- Lighting -------------------------------------------------- */}
-          <ambientLight intensity={0.12} />
+          <ambientLight intensity={0.08} />
           <hemisphereLight
             skyColor="#ff9900"
             groundColor="#0a0015"
-            intensity={0.5}
+            intensity={0.35}
           />
 
-          {/* ---- Centerpiece Atapattama (Hub) ------------------------------ */}
-          <group>
-            <Atapattama
-              position={[0, 0.2, -2.5]}
-              scale={1.3}
-              isHub={true}
-              variant={0}
-            />
-            <PositionalLanternAudio />
-          </group>
-
-          {/* ---- GPU Ember Particles --------------------------------------- */}
-          <SparkParticles />
-
-          {/* ---- Floating Blessings / Ambient Sky Lanterns ----------------- */}
-          <FloatingLanterns blessings={blessings} />
-
-          {/* ---- Sacred Bodhi Leaves -------------------------------------- */}
-          <BodhiLeaves />
+          {/* ---- Sacred Open World ----------------------------------------- */}
+          <SacredWorld blessings={blessings} />
 
           {/* ---- Post Processing Pipeline --------------------------------- */}
           <PostEffects />
 
-          {/* ---- Cinematic Auto Camera ------------------------------------ */}
-          <AutoCamera controlsRef={localControlsRef} />
+          {/* ---- Player Movement Controller -------------------------------- */}
+          <PlayerController
+            movementRef={movementRef}
+            controlsRef={localControlsRef}
+          />
 
           {/* ---- Diagnostics Telemetry ------------------------------------ */}
           <DiagnosticsTracker onDiagnostics={onDiagnostics} />
 
-          {/* ---- Manual Camera Controls ----------------------------------- */}
+          {/* ---- Manual Camera Controls (look-around only) ---------------- */}
           <OrbitControls
             ref={localControlsRef}
             enableDamping
             dampingFactor={0.05}
-            maxPolarAngle={Math.PI / 1.7}
-            minDistance={2.5}
-            maxDistance={25}
-            enabled={false} /* starts disabled — AutoCamera is in charge */
+            enablePan={false}
+            enableZoom={false}
+            maxPolarAngle={Math.PI / 1.5}
+            minPolarAngle={Math.PI / 6}
           />
         </AudioProvider>
       </Canvas>
