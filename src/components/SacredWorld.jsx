@@ -53,7 +53,7 @@ function generateSentinels() {
 }
 
 const SHRINE_POS = [0, 0, -15];
-const SHRINE_PROXIMITY = 6.0;
+const SHRINE_PROXIMITY = 20.0;
 
 export default function SacredWorld({ blessings, playerPosRef }) {
   const sentinels = useMemo(() => generateSentinels(), []);

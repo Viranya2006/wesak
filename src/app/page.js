@@ -9,7 +9,7 @@ import { useSupabaseSync } from '../hooks/useSupabaseSync';
 // Shrine position — must match SacredWorld's SHRINE_POS
 // ─────────────────────────────────────────────────────────────────────────────
 const SHRINE_POS = { x: 0, z: -15 };
-const SHRINE_NEAR_DIST = 6.0;
+const SHRINE_NEAR_DIST = 20.0;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Smooth volume lerp helper
