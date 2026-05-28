@@ -8,6 +8,7 @@ import BodhiLeaves from './BodhiLeaves';
 import SparkParticles from './SparkParticles';
 import ThoranaShrine from './ThoranaShrine';
 import LotusRain from './LotusRain';
+import AnimatedGifPanel from './AnimatedGifPanel';
 import { PositionalLanternAudio } from './AudioController';
 
 const PALETTES = [
@@ -79,6 +80,59 @@ export default function SacredWorld({ blessings, playerPosRef }) {
 
       <ThoranaShrine position={SHRINE_POS} />
       <LotusRain active={lotusActive} center={SHRINE_POS} />
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          Lotus Bloom GIF Panels — flanking the shrine, proximity-activated
+          ═══════════════════════════════════════════════════════════════════ */}
+      {/* Left lotus — on a golden pedestal, angled inward */}
+      <group position={[SHRINE_POS[0] - 6, 0, SHRINE_POS[2] + 1.5]}>
+        {/* Pedestal */}
+        <mesh position={[0, 0.4, 0]}>
+          <cylinderGeometry args={[0.6, 0.8, 0.8, 8]} />
+          <meshStandardMaterial color="#b8860b" metalness={0.5} roughness={0.4} emissive="#4a3000" emissiveIntensity={0.1} />
+        </mesh>
+        {/* Golden frame border */}
+        <mesh position={[0, 2.8, 0.06]} rotation={[0, 0.4, 0]}>
+          <planeGeometry args={[3.4, 3.9]} />
+          <meshStandardMaterial color="#daa520" metalness={0.5} roughness={0.3} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Animated GIF */}
+        <AnimatedGifPanel
+          url="/images/left.gif"
+          position={[0, 2.8, 0.12]}
+          rotation={[0, 0.4, 0]}
+          width={3.0}
+          height={3.5}
+          visible={lotusActive}
+        />
+        {/* Warm light */}
+        <pointLight color="#ff99cc" intensity={lotusActive ? 2 : 0} distance={10} decay={2} position={[0, 3.5, 1]} />
+      </group>
+
+      {/* Right lotus — mirrored */}
+      <group position={[SHRINE_POS[0] + 6, 0, SHRINE_POS[2] + 1.5]}>
+        {/* Pedestal */}
+        <mesh position={[0, 0.4, 0]}>
+          <cylinderGeometry args={[0.6, 0.8, 0.8, 8]} />
+          <meshStandardMaterial color="#b8860b" metalness={0.5} roughness={0.4} emissive="#4a3000" emissiveIntensity={0.1} />
+        </mesh>
+        {/* Golden frame border */}
+        <mesh position={[0, 2.8, 0.06]} rotation={[0, -0.4, 0]}>
+          <planeGeometry args={[3.4, 3.9]} />
+          <meshStandardMaterial color="#daa520" metalness={0.5} roughness={0.3} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Animated GIF */}
+        <AnimatedGifPanel
+          url="/images/right.gif"
+          position={[0, 2.8, 0.12]}
+          rotation={[0, -0.4, 0]}
+          width={3.0}
+          height={3.5}
+          visible={lotusActive}
+        />
+        {/* Warm light */}
+        <pointLight color="#ff99cc" intensity={lotusActive ? 2 : 0} distance={10} decay={2} position={[0, 3.5, 1]} />
+      </group>
 
       {MASTER_LANTERNS.map((m, i) => (
         <group key={`master-${i}`}>
