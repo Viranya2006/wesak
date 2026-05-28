@@ -50,22 +50,22 @@ export default function PlayerController({ movementRef, controlsRef }) {
     _velocity.addScaledVector(_forward, sy * MOVE_SPEED * dt);
     _velocity.addScaledVector(_right, sx * MOVE_SPEED * dt);
 
-    // Apply to camera position
-    camera.position.add(_velocity);
+    // Compute next position and clamp to world bounds
+    const nextPos = new THREE.Vector3().copy(camera.position).add(_velocity);
+    nextPos.x = THREE.MathUtils.clamp(nextPos.x, -WORLD_BOUND, WORLD_BOUND);
+    nextPos.z = THREE.MathUtils.clamp(nextPos.z, -WORLD_BOUND, WORLD_BOUND);
+    nextPos.y = CAMERA_HEIGHT;
 
-    // Ground lock — keep Y fixed
-    camera.position.y = CAMERA_HEIGHT;
+    // Calculate actual translation displacement
+    const translation = new THREE.Vector3().subVectors(nextPos, camera.position);
 
-    // World boundary clamp
-    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -WORLD_BOUND, WORLD_BOUND);
-    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -WORLD_BOUND, WORLD_BOUND);
+    // Apply translation to camera
+    camera.position.add(translation);
 
-    // Update OrbitControls target to follow camera (look slightly forward)
+    // Translate OrbitControls target by same vector to prevent rubber-banding
     if (controlsRef?.current) {
-      const target = controlsRef.current.target;
-      target.copy(camera.position);
-      target.addScaledVector(_forward, 2.0);
-      target.y = CAMERA_HEIGHT;
+      controlsRef.current.target.add(translation);
+      controlsRef.current.target.y = CAMERA_HEIGHT;
       controlsRef.current.update();
     }
   });

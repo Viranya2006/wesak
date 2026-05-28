@@ -28,6 +28,10 @@ export default function VirtualJoystick({ onMove }) {
     e.stopPropagation();
     activeRef.current = true;
 
+    if (baseRef.current && e.pointerId !== undefined) {
+      baseRef.current.setPointerCapture(e.pointerId);
+    }
+
     const rect = baseRef.current.getBoundingClientRect();
     centerRef.current = {
       x: rect.left + rect.width / 2,
@@ -67,6 +71,11 @@ export default function VirtualJoystick({ onMove }) {
   const handleEnd = useCallback((e) => {
     e.preventDefault();
     activeRef.current = false;
+    if (baseRef.current && e.pointerId !== undefined) {
+      try {
+        baseRef.current.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
     setHandlePos({ x: 0, y: 0 });
     if (onMove) onMove({ x: 0, y: 0 });
   }, [onMove]);
@@ -78,7 +87,6 @@ export default function VirtualJoystick({ onMove }) {
       onPointerMove={handleMove}
       onPointerUp={handleEnd}
       onPointerCancel={handleEnd}
-      onPointerLeave={handleEnd}
       style={{
         position: 'fixed',
         bottom: '6rem',

@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import gsap from 'gsap';
-import * as THREE from 'three';
 import CanvasContainer from '../components/CanvasContainer';
 import VirtualJoystick from '../components/VirtualJoystick';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
-import { captureBrandedCard } from '../lib/captureCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hotspot definitions — corporate verticals with camera positioning & lookAt
@@ -188,48 +185,32 @@ function LandingGate({ onUnlock }) {
 // Main Page Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const { blessings, submitBlessing } = useSupabaseSync();
+  const { blessings } = useSupabaseSync();
 
   // Scene unlock state — controlled by landing gate
   const [sceneUnlocked, setSceneUnlocked] = useState(false);
 
-  // Canvas & diagnostics
+  // Canvas state
   const [canvasState, setCanvasState] = useState(null);
-  const [diagnostics, setDiagnostics] = useState({
-    fps: 60,
-    drawCalls: 0,
-    geometries: 0,
-    textures: 0,
-  });
 
-  // Hotspot system
-  const [activeHotspot, setActiveHotspot] = useState(null);
-
-  // Blessing form
-  const [blessingInput, setBlessingInput] = useState('');
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [showFormFeedback, setShowFormFeedback] = useState(false);
-
-  // Camera mode tracking
-  const [cameraMode, setCameraMode] = useState('Explore');
+  // Camera controls
   const controlsRef = useRef();
   const bgAudioRef = useRef(null);
 
-  // Joystick → PlayerController movement bridge
+  // Joystick & keyboard movement bridge
   const movementRef = useRef({ x: 0, y: 0 });
+  const joystickActiveRef = useRef(false);
   const keysRef = useRef({ w: false, a: false, s: false, d: false });
 
   // WASD keyboard support — maps keys to movementRef when joystick is idle
   useEffect(() => {
     if (!sceneUnlocked) return;
     const update = () => {
+      if (joystickActiveRef.current) return;
       const k = keysRef.current;
       const kx = (k.d ? 1 : 0) - (k.a ? 1 : 0);
       const ky = (k.w ? 1 : 0) - (k.s ? 1 : 0);
-      // Only override if no joystick input
-      if (movementRef.current.x === 0 && movementRef.current.y === 0) {
-        movementRef.current = { x: kx, y: ky };
-      }
+      movementRef.current = { x: kx, y: ky };
     };
     const onDown = (e) => {
       const key = e.key.toLowerCase();
@@ -254,58 +235,14 @@ export default function Home() {
     );
   }, [sceneUnlocked]);
 
-
-
   // ── Callbacks ──
   const handleCanvasReady = useCallback((state) => {
     setCanvasState(state);
   }, []);
 
-  const handleDiagnostics = useCallback((stats) => {
-    setDiagnostics(stats);
-  }, []);
-
   const handleSceneUnlock = useCallback(() => {
     setSceneUnlocked(true);
   }, []);
-
-  // ── Hotspot click handler (no camera animation in open world) ──
-
-  const handleHotspotClick = useCallback(
-    (key) => {
-      // Toggle panel visibility (player walks to it in open world)
-      if (activeHotspot === key) {
-        setActiveHotspot(null);
-        return;
-      }
-      setActiveHotspot(key);
-    },
-    [activeHotspot],
-  );
-
-  // ── Blessing submission ──
-  const handleBlessingSubmit = useCallback(
-    (e) => {
-      e.preventDefault();
-      if (!blessingInput.trim()) return;
-
-      // 1. Spawn lantern in the 3D sky
-      submitBlessing(blessingInput);
-
-      // 2. Capture branded card composite
-      setIsCapturing(true);
-      setTimeout(() => {
-        if (canvasState && canvasState.gl) {
-          captureBrandedCard(canvasState.gl, blessingInput);
-        }
-        setIsCapturing(false);
-        setBlessingInput('');
-        setShowFormFeedback(true);
-        setTimeout(() => setShowFormFeedback(false), 4000);
-      }, 500);
-    },
-    [blessingInput, canvasState, submitBlessing],
-  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render
@@ -317,9 +254,6 @@ export default function Home() {
           ═══════════════════════════════════════════════════════════════════ */}
       {!sceneUnlocked && <LandingGate onUnlock={handleSceneUnlock} />}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          3D WebGL Canvas Layer — always mounted so it pre-loads
-          ═══════════════════════════════════════════════════════════════════ */}
       {/* ═══════════════════════════════════════════════════════════════════
           Background Music — constant loop, starts on scene unlock
           ═══════════════════════════════════════════════════════════════════ */}
@@ -334,7 +268,6 @@ export default function Home() {
       <CanvasContainer
         blessings={blessings}
         onReady={handleCanvasReady}
-        onDiagnostics={handleDiagnostics}
         controlsRef={controlsRef}
         sceneUnlocked={sceneUnlocked}
         movementRef={movementRef}
@@ -356,157 +289,17 @@ export default function Home() {
           </div>
 
           {/* ── Virtual Joystick (bottom-left) ── */}
-          <VirtualJoystick onMove={(v) => { movementRef.current = v; }} />
-
-          {/* ── Top-Right WebGL Diagnostics Panel ── */}
-          <div className="absolute top-6 right-6 z-10 glass-panel p-4 rounded-xl font-mono text-xs text-green-400 w-64 pointer-events-auto">
-            <h2 className="text-cx-gold text-[10px] tracking-wider font-bold mb-2 pb-1 border-b border-white/10 uppercase">
-              WebGL Diagnostics
-            </h2>
-            <div className="space-y-1 text-cx-cream/90 font-mono">
-              <div className="flex justify-between">
-                <span>FPS:</span>
-                <span className={diagnostics.fps < 45 ? 'text-red-400' : 'text-green-400'}>
-                  {diagnostics.fps} FPS
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>GPU Draw Calls:</span>
-                <span>{diagnostics.drawCalls}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Allocated Geometries:</span>
-                <span>{diagnostics.geometries}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Allocated Textures:</span>
-                <span>{diagnostics.textures}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Active Sky Lanterns:</span>
-                <span>{blessings.length}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/5 pt-1 mt-1">
-                <span>Camera Mode:</span>
-                <span className={cameraMode === 'Auto' ? 'text-cx-gold' : 'text-blue-400'}>
-                  {cameraMode}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Hotspot Expansion Card (left column) ── */}
-          {activeHotspot && (
-            <div className="absolute left-6 top-[150px] w-96 max-h-[60vh] z-10 glass-panel p-6 rounded-2xl flex flex-col justify-between pointer-events-auto animate-fade-in">
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] tracking-wider text-cx-gold font-bold uppercase font-mono">
-                    Corporate Vertical
-                  </span>
-                  <button
-                    onClick={() => handleHotspotClick(activeHotspot)}
-                    className="text-cx-cream/40 hover:text-cx-cream text-sm font-mono cursor-pointer transition-colors"
-                  >
-                    ✕ Close
-                  </button>
-                </div>
-                <h3 className="text-xl font-bold font-display text-cx-cream mb-3 leading-snug">
-                  {HOTSPOTS[activeHotspot].title}
-                </h3>
-                <p className="text-sm text-cx-cream/70 leading-relaxed font-sans font-light custom-scroll overflow-y-auto pr-1">
-                  {HOTSPOTS[activeHotspot].description}
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-white/10">
-                <a
-                  href={HOTSPOTS[activeHotspot].link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-between items-center bg-cx-gold hover:bg-cx-gold/90 text-black font-semibold text-xs py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-cx-gold/20"
-                >
-                  <span>IMPLEMENT ENGINE INTEGRATION</span>
-                  <span>→</span>
-                </a>
-              </div>
-            </div>
-          )}
-
-          {/* ── Blessing Submission Card (bottom-right) ── */}
-          <div className="absolute right-6 bottom-6 w-96 z-10 glass-panel p-6 rounded-2xl pointer-events-auto">
-            <h2 className="text-sm font-bold font-display text-cx-gold mb-1 uppercase tracking-wider">
-              Submit A Lantern Blessing
-            </h2>
-            <p className="text-[11px] text-cx-cream/60 leading-normal mb-4">
-              Type your message below. It will float as an individual 3D lantern emitting spatial
-              audio, and compile into a custom Ceylon X viral card.
-            </p>
-
-            {showFormFeedback ? (
-              <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl text-center text-xs text-green-300">
-                <div className="text-lg mb-1">🪔 Success!</div>
-                Your blessing has floated to the sky. Look for your crimson lantern, and check your
-                downloads folder for your composite share card!
-              </div>
-            ) : (
-              <form onSubmit={handleBlessingSubmit} className="space-y-3">
-                <textarea
-                  value={blessingInput}
-                  onChange={(e) => setBlessingInput(e.target.value)}
-                  placeholder="e.g. Wishing health, prosperity, and peace for all beings..."
-                  maxLength={120}
-                  rows={3}
-                  required
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-cx-cream/90 placeholder-cx-cream/30 focus:outline-none focus:border-cx-gold/60 resize-none font-sans"
-                />
-                <div className="text-right text-[10px] text-cx-cream/40 font-mono mt-[-8px]">
-                  {blessingInput.length}/120 characters
-                </div>
-                <button
-                  type="submit"
-                  disabled={isCapturing}
-                  className={`w-full bg-cx-gold/20 hover:bg-cx-gold/30 border border-cx-gold/40 hover:border-cx-gold text-cx-gold font-bold text-xs py-3 rounded-xl transition-all uppercase tracking-wide cursor-pointer ${
-                    isCapturing ? 'opacity-50 cursor-wait' : ''
-                  }`}
-                >
-                  {isCapturing ? 'Capturing Scene Buffer...' : 'Launch Lantern & Share'}
-                </button>
-              </form>
-            )}
-          </div>
-
-          {/* ── Bottom Center: Innovation Hub Navigation ── */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4 pointer-events-auto">
-            <div className="glass-panel p-4 rounded-2xl flex flex-col gap-3">
-              <div className="text-center">
-                <span className="text-[9px] tracking-[0.25em] text-cx-gold font-bold uppercase font-mono">
-                  Ceylon X Innovation Hub
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {Object.keys(HOTSPOTS).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => handleHotspotClick(key)}
-                    className={`py-2.5 px-2 rounded-xl text-[10px] font-bold text-center border transition-all cursor-pointer leading-snug flex flex-col justify-center items-center h-16 ${
-                      activeHotspot === key
-                        ? 'bg-cx-gold text-black border-cx-gold shadow-lg shadow-cx-gold/20'
-                        : 'bg-black/30 text-cx-cream/70 border-white/5 hover:border-cx-gold/30 hover:text-cx-cream'
-                    }`}
-                  >
-                    <span>
-                      {HOTSPOTS[key].title
-                        .split(' & ')[0]
-                        .split(' Implementation ')[0]
-                        .split(' Software ')[0]}
-                    </span>
-                    <span className="text-[8px] opacity-60 mt-1 font-mono">
-                      {activeHotspot === key ? '◀ View' : 'Focus'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <VirtualJoystick onMove={(v) => { 
+            joystickActiveRef.current = (v.x !== 0 || v.y !== 0);
+            if (joystickActiveRef.current) {
+              movementRef.current = v;
+            } else {
+              const k = keysRef.current;
+              const kx = (k.d ? 1 : 0) - (k.a ? 1 : 0);
+              const ky = (k.w ? 1 : 0) - (k.s ? 1 : 0);
+              movementRef.current = { x: kx, y: ky };
+            }
+          }} />
 
           {/* ── Bottom-Left Branding Watermark ── */}
           <div className="absolute bottom-6 left-6 z-10 pointer-events-none opacity-50 flex flex-col font-mono text-[9px] text-cx-cream/80">
@@ -514,17 +307,6 @@ export default function Home() {
             <span>ceylonx.co</span>
           </div>
         </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          Capture overlay — shown on top of everything during card capture
-          ═══════════════════════════════════════════════════════════════════ */}
-      {isCapturing && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 pointer-events-none">
-          <div className="text-cx-gold text-sm font-mono tracking-widest animate-pulse">
-            COMPILING CAPTURE MATRIX...
-          </div>
-        </div>
       )}
     </main>
   );

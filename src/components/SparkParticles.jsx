@@ -2,7 +2,7 @@ import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const PARTICLE_COUNT = 1500;
+const PARTICLE_COUNT = 800;
 
 export default function SparkParticles() {
   const meshRef = useRef();

@@ -357,18 +357,20 @@ export default function Atapattama({
       {/* ╔══════════════════════════════════════╗
           ║  5. Warm Flickering Point Light      ║
           ╚══════════════════════════════════════╝ */}
-      <pointLight
-        ref={pointLightRef}
-        color={glowColor}
-        distance={3}
-        decay={2}
-        position={[0, 0, 0]}
-      />
+      {!lightweight && (
+        <pointLight
+          ref={pointLightRef}
+          color={glowColor}
+          distance={3}
+          decay={2}
+          position={[0, 0, 0]}
+        />
+      )}
 
       {/* ╔══════════════════════════════════════╗
           ║  6. Variant 1 — Nested Inner Lantern ║
           ╚══════════════════════════════════════╝ */}
-      {variant === 1 && <NestedInner saviyaMaterial={saviyaMaterial} />}
+      {variant === 1 && !lightweight && <NestedInner saviyaMaterial={saviyaMaterial} />}
     </group>
   );
 }

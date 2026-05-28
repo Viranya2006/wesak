@@ -105,7 +105,7 @@ export default function CanvasContainer({
           />
 
           {/* ---- Diagnostics Telemetry ------------------------------------ */}
-          <DiagnosticsTracker onDiagnostics={onDiagnostics} />
+          {onDiagnostics && <DiagnosticsTracker onDiagnostics={onDiagnostics} />}
 
           {/* ---- Manual Camera Controls (look-around only) ---------------- */}
           <OrbitControls
