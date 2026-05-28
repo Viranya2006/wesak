@@ -77,7 +77,7 @@ function LandingGate({ onUnlock }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden px-4"
       style={{
         background: 'radial-gradient(ellipse at center, #1a0000 0%, #000000 70%)',
         opacity: fadingOut ? 0 : fadedIn ? 1 : 0,
@@ -87,20 +87,20 @@ function LandingGate({ onUnlock }) {
     >
       {/* ── Title Block ── */}
       <h1
-        className="font-display text-5xl sm:text-6xl md:text-7xl font-bold tracking-[0.35em] mb-4 select-none"
+        className="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-[0.2em] sm:tracking-[0.35em] mb-3 select-none text-center"
         style={{ color: '#f59e0b' }}
       >
         CEYLON X
       </h1>
       <p
-        className="font-sans text-xs sm:text-sm tracking-[0.25em] uppercase mb-10"
+        className="font-sans text-[10px] sm:text-xs md:text-sm tracking-[0.18em] sm:tracking-[0.25em] uppercase mb-8 sm:mb-10 text-center"
         style={{ color: '#fff8e7' }}
       >
         VESAK KALAPAYA — IMMERSIVE 3D EXPERIENCE
       </p>
 
       {/* ── Pulsing Mandala ── */}
-      <div className="relative w-40 h-40 mb-10 flex items-center justify-center">
+      <div className="relative w-28 h-28 sm:w-40 sm:h-40 mb-8 sm:mb-10 flex items-center justify-center">
         {/* Outer glow ring */}
         <div
           className="absolute inset-0 rounded-full"
@@ -137,7 +137,7 @@ function LandingGate({ onUnlock }) {
 
       {/* ── Descriptive Text ── */}
       <p
-        className="max-w-lg text-center text-sm sm:text-base leading-relaxed font-sans mb-10 px-6"
+        className="max-w-md text-center text-xs sm:text-sm md:text-base leading-relaxed font-sans mb-8 sm:mb-10 px-4"
         style={{ color: 'rgba(255,248,231,0.7)' }}
       >
         Celebrate the sacred Festival of Vesak through an interactive cinematic journey featuring
@@ -147,8 +147,8 @@ function LandingGate({ onUnlock }) {
       {/* ── CTA Button ── */}
       <button
         onClick={handleUnveil}
-        className="px-10 py-4 rounded-xl text-sm sm:text-base font-bold tracking-wider uppercase cursor-pointer
-                   transition-all duration-300 ease-out hover:scale-105 active:scale-95"
+        className="px-6 py-3.5 sm:px-10 sm:py-4 rounded-xl text-xs sm:text-sm md:text-base font-bold tracking-wider uppercase cursor-pointer
+                   transition-all duration-300 ease-out hover:scale-105 active:scale-95 text-center max-w-full"
         style={{
           backgroundColor: '#f59e0b',
           color: '#000000',
@@ -158,13 +158,13 @@ function LandingGate({ onUnlock }) {
         ENTER EXPERIENTIAL VESAK KALAPAYA WITH AUDIO
       </button>
 
-      <p className="mt-4 text-xs" style={{ color: 'rgba(255,248,231,0.35)' }}>
+      <p className="mt-4 text-[10px] sm:text-xs" style={{ color: 'rgba(255,248,231,0.35)' }}>
         🔊 Best experienced with headphones
       </p>
 
       {/* ── Bottom Signature ── */}
       <p
-        className="absolute bottom-6 text-[10px] tracking-wider font-mono"
+        className="absolute bottom-4 sm:bottom-6 text-[9px] sm:text-[10px] tracking-wider font-mono text-center w-full px-4"
         style={{ color: 'rgba(245,158,11,0.5)' }}
       >
         Engineered by Ceylon X Corporation — ceylonx.co
@@ -280,10 +280,10 @@ export default function Home() {
         <>
           {/* ── Top-Left Header Branding ── */}
           <div className="absolute top-6 left-6 z-10 flex flex-col pointer-events-none">
-            <h1 className="text-2xl font-bold tracking-widest text-cx-gold font-display animate-pulse-slow">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-widest text-cx-gold font-display animate-pulse-slow">
               CEYLON X
             </h1>
-            <span className="text-[10px] tracking-[0.3em] text-cx-cream/60 font-mono mt-1">
+            <span className="text-[8px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.3em] text-cx-cream/60 font-mono mt-0.5">
               VESAK KALAPAYA — OPEN WORLD
             </span>
           </div>
@@ -301,8 +301,8 @@ export default function Home() {
             }
           }} />
 
-          {/* ── Bottom-Left Branding Watermark ── */}
-          <div className="absolute bottom-6 left-6 z-10 pointer-events-none opacity-50 flex flex-col font-mono text-[9px] text-cx-cream/80">
+          {/* ── Bottom-Right Branding Watermark ── */}
+          <div className="absolute bottom-6 right-6 z-10 pointer-events-none opacity-50 flex flex-col text-right font-mono text-[9px] text-cx-cream/80">
             <span>Engineered by Ceylon X Corporation</span>
             <span>ceylonx.co</span>
           </div>

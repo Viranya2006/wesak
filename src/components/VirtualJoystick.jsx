@@ -89,7 +89,7 @@ export default function VirtualJoystick({ onMove }) {
       onPointerCancel={handleEnd}
       style={{
         position: 'fixed',
-        bottom: '6rem',
+        bottom: '2rem',
         left: '2rem',
         width: `${RING_SIZE}px`,
         height: `${RING_SIZE}px`,
