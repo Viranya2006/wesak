@@ -7,7 +7,6 @@ import FloatingLanterns from './FloatingLanterns';
 import BodhiLeaves from './BodhiLeaves';
 import SparkParticles from './SparkParticles';
 import ThoranaShrine from './ThoranaShrine';
-import LotusRain from './LotusRain';
 import AnimatedGifPanel from './AnimatedGifPanel';
 import { PositionalLanternAudio } from './AudioController';
 
@@ -79,7 +78,6 @@ export default function SacredWorld({ blessings, playerPosRef }) {
       <Stars radius={120} depth={60} count={6000} factor={6} saturation={0.5} fade speed={1.5} />
 
       <ThoranaShrine position={SHRINE_POS} />
-      <LotusRain active={lotusActive} center={SHRINE_POS} />
 
       {/* ═══════════════════════════════════════════════════════════════════
           Lotus Bloom GIF Panels — flanking the shrine, proximity-activated
