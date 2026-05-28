@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  /* Register fonts mapped from layout variables */
+  --font-sans: var(--font-inter), sans-serif;
+  --font-display: var(--font-cinzel), serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Custom corporate branding & scene colors */
+  --color-cx-gold: #f59e0b;
+  --color-cx-orange: #ff5500;
+  --color-cx-cream: #fff8e7;
+  --color-cx-bamboo: #3d2100;
+
+  /* Custom animations */
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+:root {
+  --background: #000000;
+  --foreground: #fff8e7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background-color: #000000;
+  color: #fff8e7;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Glassmorphism utility helpers */
+.glass-panel {
+  background: rgba(10, 5, 2, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.glass-panel:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.05);
+}
+
+/* Custom scrollbars for info dialogs */
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.3);
+  border-radius: 2px;
+}
