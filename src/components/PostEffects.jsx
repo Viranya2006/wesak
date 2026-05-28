@@ -7,10 +7,10 @@ export default function PostEffects() {
     <EffectComposer disableNormalPass multisampling={4}>
       {/* 1. Selective Unreal Bloom (Correction 3) */}
       <Bloom 
-        luminanceThreshold={0.1} 
-        luminanceSmoothing={0.025}
-        intensity={2.5} 
-        radius={0.75} 
+        luminanceThreshold={0.4} 
+        luminanceSmoothing={0.05}
+        intensity={1.2} 
+        radius={0.6} 
         mipmapBlur
       />
 

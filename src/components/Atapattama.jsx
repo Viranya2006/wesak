@@ -52,7 +52,7 @@ const SaviyaShader = {
         smoothstep(petals - 0.03, petals + 0.02, radius)
       );
 
-      vec3 paperGlow = mix(uPaperColor, uGlowColor * 1.6, fresnel) * flicker;
+      vec3 paperGlow = mix(uPaperColor, uGlowColor * 1.1, fresnel) * flicker;
       vec3 frameColor = vec3(1.0, 1.0, 1.0);
       vec3 finalColor = mix(paperGlow, frameColor, border * 0.7);
       float alpha = mix(0.3, 1.0, pattern);
@@ -259,11 +259,11 @@ export default function Atapattama({
         position[1] + Math.sin(t * 0.6) * 0.15;
     }
 
-    // Warm flickering point light
+    // Warm flickering point light — kept low to preserve color
     if (pointLightRef.current) {
-      const flicker = Math.sin(t * 5.2) * Math.cos(t * 3.1) * 0.15 + 0.85;
-      const micro = 1.0 + Math.sin(t * 15.0) * 0.08;
-      const base = isHub ? 4.5 : 2.5;
+      const flicker = Math.sin(t * 5.2) * Math.cos(t * 3.1) * 0.1 + 0.9;
+      const micro = 1.0 + Math.sin(t * 15.0) * 0.04;
+      const base = isHub ? 1.8 : 0.8;
       pointLightRef.current.intensity = base * flicker * micro;
     }
   });
@@ -355,8 +355,8 @@ export default function Atapattama({
       <pointLight
         ref={pointLightRef}
         color={glowColor}
-        distance={6}
-        decay={1.5}
+        distance={3}
+        decay={2}
         position={[0, 0, 0]}
       />
 
