@@ -18,7 +18,7 @@ const _right = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _velocity = new THREE.Vector3();
 
-export default function PlayerController({ movementRef, controlsRef }) {
+export default function PlayerController({ movementRef, controlsRef, playerPosRef }) {
   const { camera } = useThree();
   const smoothVel = useRef({ x: 0, y: 0 });
 
@@ -34,7 +34,16 @@ export default function PlayerController({ movementRef, controlsRef }) {
     const sx = smoothVel.current.x;
     const sy = smoothVel.current.y;
 
-    // Skip if effectively zero input
+    // Always export camera position for proximity systems
+    if (playerPosRef) {
+      playerPosRef.current = {
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z,
+      };
+    }
+
+    // Skip movement if effectively zero input
     if (Math.abs(sx) < 0.01 && Math.abs(sy) < 0.01) return;
 
     // Get camera forward direction, flatten to XZ plane

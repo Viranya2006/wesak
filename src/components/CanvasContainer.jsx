@@ -47,6 +47,7 @@ export default function CanvasContainer({
   controlsRef,
   sceneUnlocked,
   movementRef,
+  playerPosRef,
 }) {
   // Always call useRef unconditionally (rules of hooks)
   const internalControlsRef = useRef(null);
@@ -93,7 +94,7 @@ export default function CanvasContainer({
           />
 
           {/* ---- Sacred Open World ----------------------------------------- */}
-          <SacredWorld blessings={blessings} />
+          <SacredWorld blessings={blessings} playerPosRef={playerPosRef} />
 
           {/* ---- Post Processing Pipeline --------------------------------- */}
           <PostEffects />
@@ -102,6 +103,7 @@ export default function CanvasContainer({
           <PlayerController
             movementRef={movementRef}
             controlsRef={localControlsRef}
+            playerPosRef={playerPosRef}
           />
 
           {/* ---- Diagnostics Telemetry ------------------------------------ */}

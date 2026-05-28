@@ -6,38 +6,23 @@ import VirtualJoystick from '../components/VirtualJoystick';
 import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hotspot definitions — corporate verticals with camera positioning & lookAt
+// Shrine position — must match SacredWorld's SHRINE_POS
 // ─────────────────────────────────────────────────────────────────────────────
-const HOTSPOTS = {
-  software: {
-    title: 'Custom Software Architectures',
-    description:
-      'Architecting high-scale, zero-downtime microservices and mission-critical enterprise systems. Engineered with military-grade redundancy, optimized data pipelines, and next-generation cloud infrastructure.',
-    link: 'https://ceylonx.co/',
-    camPos: { x: 1.8, y: 0.8, z: -1.2 },
-    lookAt: { x: 0, y: 0.2, z: -2.5 },
-  },
-  erp: {
-    title: 'Integrated ERP & Retail POS Solutions',
-    description:
-      'Omni-channel enterprise resource planning platforms linking inventory, sales forecasting, payroll, and real-time ledger accounting. Seamless offline-first POS syncing for global retail networks.',
-    link: 'https://ceylonx.co/',
-    camPos: { x: -2.0, y: 0.5, z: -1.8 },
-    lookAt: { x: 0, y: 0.2, z: -2.5 },
-  },
-  ai: {
-    title: 'AI Implementation Frameworks',
-    description:
-      'Embedding domain-specific large language models, computer vision systems, and automated agent workflows directly into enterprise software stacks. Data-secure, custom-trained intelligence matrices.',
-    link: 'https://ceylonx.co/',
-    camPos: { x: 0.8, y: -0.6, z: -0.8 },
-    lookAt: { x: 0, y: 0.2, z: -2.5 },
-  },
-};
+const SHRINE_POS = { x: 0, z: -15 };
+const SHRINE_NEAR_DIST = 6.0;
 
-// Default camera position for scene reset
-const DEFAULT_CAM = { x: 0, y: 1, z: 6 };
-const DEFAULT_LOOK = { x: 0, y: 0.2, z: -2.5 };
+// ─────────────────────────────────────────────────────────────────────────────
+// Smooth volume lerp helper
+// ─────────────────────────────────────────────────────────────────────────────
+function lerpVolume(audioEl, target, rate) {
+  if (!audioEl) return;
+  const diff = target - audioEl.volume;
+  if (Math.abs(diff) < 0.005) {
+    audioEl.volume = target;
+  } else {
+    audioEl.volume += diff * rate;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Landing Gate — full-screen premium overlay
@@ -196,6 +181,10 @@ export default function Home() {
   // Camera controls
   const controlsRef = useRef();
   const bgAudioRef = useRef(null);
+  const nearAudioRef = useRef(null);
+
+  // Player position ref — written by PlayerController inside R3F, read here for proximity audio
+  const playerPosRef = useRef({ x: 0, y: 2, z: 15 });
 
   // Joystick & keyboard movement bridge
   const movementRef = useRef({ x: 0, y: 0 });
@@ -235,6 +224,45 @@ export default function Home() {
     );
   }, [sceneUnlocked]);
 
+  // ── Proximity Audio Crossfade System ──
+  // Polls playerPosRef every 100ms, computes distance to shrine,
+  // and smoothly crossfades between bg.mp3 and near.mp3
+  useEffect(() => {
+    if (!sceneUnlocked) return;
+
+    const nearStartedRef = { current: false };
+
+    const interval = setInterval(() => {
+      const pos = playerPosRef.current;
+      if (!pos) return;
+
+      const dx = pos.x - SHRINE_POS.x;
+      const dz = pos.z - SHRINE_POS.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      const bgAudio = bgAudioRef.current;
+      const nearAudio = nearAudioRef.current;
+
+      if (dist <= SHRINE_NEAR_DIST) {
+        // Near shrine — fade bg down, fade near up
+        lerpVolume(bgAudio, 0.05, 0.08);
+        lerpVolume(nearAudio, 0.6, 0.08);
+
+        // Start near audio if not playing
+        if (nearAudio && !nearStartedRef.current) {
+          nearAudio.play().catch(() => {});
+          nearStartedRef.current = true;
+        }
+      } else {
+        // Far from shrine — fade bg up, fade near down
+        lerpVolume(bgAudio, 0.45, 0.08);
+        lerpVolume(nearAudio, 0.0, 0.08);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [sceneUnlocked]);
+
   // ── Callbacks ──
   const handleCanvasReady = useCallback((state) => {
     setCanvasState(state);
@@ -265,12 +293,24 @@ export default function Home() {
         style={{ display: 'none' }}
       />
 
+      {/* ═══════════════════════════════════════════════════════════════════
+          Proximity Music — near.mp3, loops when close to shrine
+          ═══════════════════════════════════════════════════════════════════ */}
+      <audio
+        ref={nearAudioRef}
+        src="/audio/near.mp3"
+        loop
+        preload="auto"
+        style={{ display: 'none' }}
+      />
+
       <CanvasContainer
         blessings={blessings}
         onReady={handleCanvasReady}
         controlsRef={controlsRef}
         sceneUnlocked={sceneUnlocked}
         movementRef={movementRef}
+        playerPosRef={playerPosRef}
       />
 
       {/* ═══════════════════════════════════════════════════════════════════
